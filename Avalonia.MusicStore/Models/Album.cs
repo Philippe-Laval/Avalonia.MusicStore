@@ -1,8 +1,10 @@
-﻿using iTunesSearch.Library;
+﻿using System;
+using iTunesSearch.Library;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Avalonia.MusicStore.Models;
@@ -46,5 +48,76 @@ public class Album
             var data = await s_httpClient.GetByteArrayAsync(CoverUrl);
             return new MemoryStream(data);
         }
+    }
+    
+    public async Task SaveAsync()
+    {
+        if (!Directory.Exists("./Cache"))
+        {
+            Directory.CreateDirectory("./Cache");
+        }
+
+        using (var fs = File.OpenWrite(CachePath))
+        {
+            await SaveToStreamAsync(this, fs);
+        }
+    }
+
+    public Stream SaveCoverBitmapStream()
+    {
+        return File.OpenWrite(CachePath + ".bmp");
+    }
+
+    private static async Task SaveToStreamAsync(Album data, Stream stream)
+    {
+        await JsonSerializer.SerializeAsync(stream, data).ConfigureAwait(false);
+    }
+    
+    public static async Task<Album?> LoadFromStream(FileStream fileStream)
+    {
+        try
+        {
+            using StreamReader reader = new StreamReader(fileStream);
+            string fileContents = await reader.ReadToEndAsync();
+
+            if (!string.IsNullOrWhiteSpace(fileContents))
+            {
+                var album = JsonSerializer.Deserialize<Album>(fileContents);
+                return album;
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+        return null;
+    }
+
+    public static async Task<IEnumerable<Album>> LoadCachedAsync()
+    {
+        if (!Directory.Exists("./Cache"))
+        {
+            Directory.CreateDirectory("./Cache");
+        }
+
+        var results = new List<Album>();
+
+        foreach (var file in Directory.EnumerateFiles("./Cache"))
+        {
+            if (!string.IsNullOrWhiteSpace(new DirectoryInfo(file).Extension)) continue;
+
+            await using var fs = File.OpenRead(file);
+            var album = await Album.LoadFromStream(fs).ConfigureAwait(false);
+            if (album is { })
+            {
+                results.Add(album);
+            }
+            else
+            {
+               File.Delete(file); 
+            }
+        }
+        
+        return results;
     }
 } 
