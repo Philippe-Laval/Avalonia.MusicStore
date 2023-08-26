@@ -12,6 +12,7 @@
             <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
         </StackPanel>
         <Button Content="Buy Album"
+                Command="{Binding BuyMusicCommand}"
                 DockPanel.Dock="Bottom"
                 HorizontalAlignment="Center" />
         <ListBox ItemsSource="{Binding SearchResults}" 

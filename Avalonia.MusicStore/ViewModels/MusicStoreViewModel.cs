@@ -3,6 +3,7 @@ using ReactiveUI;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading;
 
@@ -16,6 +17,11 @@ public class MusicStoreViewModel : ViewModelBase
     
     public MusicStoreViewModel()
     {
+        BuyMusicCommand = ReactiveCommand.Create(() =>
+        {
+            return SelectedAlbum;
+        });
+        
         // SearchResults.Add(new AlbumViewModel());
         // SearchResults.Add(new AlbumViewModel());
         // SearchResults.Add(new AlbumViewModel());
@@ -25,6 +31,9 @@ public class MusicStoreViewModel : ViewModelBase
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(DoSearch!);
     }
+    
+    public ReactiveCommand<Unit, AlbumViewModel?> BuyMusicCommand { get; }
+    
     
     private async void DoSearch(string s)
     {
